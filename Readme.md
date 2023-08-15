@@ -46,7 +46,7 @@ This project features to detect:
 ```
 * Lanuch "Developer Command Prompt for VS 2019"
 ```
-> cd pico_buttons
+> cd pico_buttons\example
 > mkdir build
 > cd build
 > cmake -G "NMake Makefiles" ..
