@@ -15,26 +15,26 @@ uint32_t scan_cnt = 0;
 uint32_t t = 0;
 
 static constexpr uint PIN_LED           = PICO_DEFAULT_LED_PIN;
-static constexpr uint PIN_RESET_BUTTON  = 18;
-static constexpr uint PIN_SET_BUTTON    = 19;
-static constexpr uint PIN_CENTER_BUTTON = 20;
+static constexpr uint PIN_UP_BUTTON     = 18;
+static constexpr uint PIN_DOWN_BUTTON   = 19;
+static constexpr uint PIN_LEFT_BUTTON   = 20;
 static constexpr uint PIN_RIGHT_BUTTON  = 21;
-static constexpr uint PIN_LEFT_BUTTON   = 22;
-static constexpr uint PIN_DOWN_BUTTON   = 26;
-static constexpr uint PIN_UP_BUTTON     = 27;
+static constexpr uint PIN_CENTER_BUTTON = 22;
+static constexpr uint PIN_SET_BUTTON    = 26;
+static constexpr uint PIN_RESET_BUTTON  = 27;
 
 // ADC Timer & frequency
 static repeating_timer_t timer;
 static constexpr int INTERVAL_BUTTONS_CHECK_MS = 50;
 
 static button_t btns_5way_tactile_plus2[] = {
-    {"reset",  PIN_RESET_BUTTON,  &Buttons::DEFAULT_BUTTON_SINGLE_CONFIG},
-    {"set",    PIN_SET_BUTTON,    &Buttons::DEFAULT_BUTTON_SINGLE_CONFIG},
+    {"up",     PIN_UP_BUTTON,     &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
+    {"down",   PIN_DOWN_BUTTON,   &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
+    {"left",   PIN_LEFT_BUTTON,   &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
+    {"right",  PIN_RIGHT_BUTTON,  &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
     {"center", PIN_CENTER_BUTTON, &Buttons::DEFAULT_BUTTON_MULTI_CONFIG},
-    {"left",   PIN_RIGHT_BUTTON,  &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
-    {"right",  PIN_LEFT_BUTTON,   &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
-    {"up",     PIN_DOWN_BUTTON,   &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
-    {"down",   PIN_UP_BUTTON,     &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG}
+    {"set",    PIN_SET_BUTTON,    &Buttons::DEFAULT_BUTTON_SINGLE_CONFIG},
+    {"reset",  PIN_RESET_BUTTON,  &Buttons::DEFAULT_SWITCH_CONFIG}
 };
 
 Buttons* buttons = nullptr;
@@ -85,7 +85,7 @@ int main()
 
     while (true) {
         button_event_t event;
-        if (buttons->get_button_event(&event)) {
+        if (buttons->get_button_event(event)) {
             switch (event.type) {
             case EVT_SINGLE:
                 if (event.repeat_count > 0) {
@@ -105,6 +105,12 @@ int main()
                 break;
             case EVT_LONG_LONG:
                 printf("%s: LongLong\r\n", event.button_name);
+                break;
+            case EVT_ON:
+                printf("%s: switch on\r\n", event.button_name);
+                break;
+            case EVT_OFF:
+                printf("%s: switch off\r\n", event.button_name);
                 break;
             default:
                 break;

@@ -8,12 +8,12 @@
 
 inline uint8_t trailing_zeros64(uint64_t u64)
 {
-    return (uint8_t) __builtin_ctzll(u64);
+    return static_cast<uint8_t>(__builtin_ctzll(u64));
 }
 
 inline uint8_t ones_count64(uint64_t u64)
 {
-    return (uint8_t) __builtin_popcountll(u64);
+    return static_cast<uint8_t>(__builtin_popcountll(u64));
 }
 
 Buttons::Buttons(button_t* buttons, int size, uint8_t scan_skip)
@@ -33,6 +33,7 @@ void Buttons::scan_periodic()
         // what to get (default values)
         uint8_t repeat_cnt = 0;
         uint8_t count_rise = 0;
+        uint8_t count_fall = 0;
         bool detect_long = false;
         bool detect_long_long = false;
         // alias
@@ -41,59 +42,74 @@ void Buttons::scan_periodic()
         // === get raw status of pin ===
         bool raw_sts = gpio_get(button->pin) == config->active_high;
         // === unshift history ===
-        unshift_history(&button->history, raw_sts);
-        uint8_t recent_stay_pushed_counts = get_recent_stay_pushed_counts(&button->history);
-        uint8_t recent_stay_released_counts = get_recent_stay_released_counts(&button->history);
-        // === Detect Repeated (by non-filtered) ===
-        if (config->long_detect_cnt == 0 && config->long_long_detect_cnt == 0) {
-            if ((_scan_count % (config->repeat_skip + 1)) == 0) {
-                if (config->repeat_detect_cnt > 0 && recent_stay_pushed_counts >= config->repeat_detect_cnt) {
-                    if (button->rpt_cnt < 255) {
-                        button->rpt_cnt++;
+        unshift_history(button->history, raw_sts);
+        uint8_t recent_stay_pushed_counts = get_recent_stay_pushed_counts(button->history);
+        uint8_t recent_stay_released_counts = get_recent_stay_released_counts(button->history);
+        if (config->is_button) {
+            // === Detect Repeated (by non-filtered) ===
+            if (config->long_detect_cnt == 0 && config->long_long_detect_cnt == 0) {
+                if ((_scan_count % (config->repeat_skip + 1)) == 0) {
+                    if (config->repeat_detect_cnt > 0 && recent_stay_pushed_counts >= config->repeat_detect_cnt) {
+                        if (button->rpt_cnt < 255) {
+                            button->rpt_cnt++;
+                        }
+                        repeat_cnt = button->rpt_cnt;
+                    } else {
+                        button->rpt_cnt = 0;
                     }
-                    repeat_cnt = button->rpt_cnt;
-                } else {
-                    button->rpt_cnt = 0;
                 }
             }
-        }
-        // === Detect Long (by non-filtered) ===
-        if (config->repeat_detect_cnt == 0) {
-            if (recent_stay_pushed_counts > 0) {
-                if (recent_stay_pushed_counts == config->long_detect_cnt) {
-                    detect_long = true;
-                } else if (recent_stay_pushed_counts == config->long_long_detect_cnt) {
-                    detect_long_long = true;
+            // === Detect Long (by non-filtered) ===
+            if (config->repeat_detect_cnt == 0) {
+                if (recent_stay_pushed_counts > 0) {
+                    if (recent_stay_pushed_counts == config->long_detect_cnt) {
+                        detect_long = true;
+                    } else if (recent_stay_pushed_counts == config->long_long_detect_cnt) {
+                        detect_long_long = true;
+                    }
                 }
             }
         }
         // === unshift Filter ===
         if (recent_stay_pushed_counts >= config->filter_size) {
-            unshift_history(&button->filtered, true);
+            unshift_history(button->filtered, true);
         } else if (recent_stay_released_counts >= config->filter_size) {
-            unshift_history(&button->filtered, false);
+            unshift_history(button->filtered, false);
         } else {
-            unshift_history(&button->filtered, get_pos_history(&button->filtered, 0));
+            unshift_history(button->filtered, get_pos_history(button->filtered, 0));
         }
-        uint8_t recent_stay_released_counts_filtered = get_recent_stay_released_counts(&button->filtered);
+        uint8_t recent_stay_released_counts_filtered = get_recent_stay_released_counts(button->filtered);
         // === Check Action finished (only if multiClicks) ===
         bool act_finished = recent_stay_released_counts_filtered >= config->act_finish_cnt;
         // === Then, Count rising edge ===
         if (repeat_cnt > 0) { // if repeatCnt,countRise could be 0
             count_rise = 1;
         } else if (act_finished) {
-            count_rise = count_rising_edge(&button->filtered, !config->multi_clicks);
+            count_rise = count_rising_edge(button->filtered, !config->multi_clicks);
+        }
+        if (!config->is_button) {
+            count_fall = count_falling_edge(button->filtered, !config->multi_clicks);
+        } else {
+            count_fall = 0;
         }
         // Clear all once detected, initialize all as true to avoid repeated detection
         if (detect_long || count_rise > 0) {
-            clear_history(&button->filtered, true);
+            clear_history(button->filtered, true);
+        } else if (count_fall > 0) {
+            clear_history(button->filtered, false);
         }
         // === Send event ===
         button_event_type_t event_type = EVT_NONE;
         if (count_rise > 1) {
             event_type = EVT_MULTI;
         } else if (count_rise > 0) {
-            event_type = EVT_SINGLE;
+            if (config->is_button) {
+                event_type = EVT_SINGLE;
+            } else {
+                event_type = EVT_ON;
+            }
+        } else if (count_fall > 0) {
+            event_type = EVT_OFF;
         } else if (detect_long) {
             event_type = EVT_LONG;
         } else if (detect_long_long) {
@@ -114,53 +130,48 @@ void Buttons::scan_periodic()
     _scan_count++;
 }
 
-bool Buttons::get_button_event(button_event_t* button_event)
+bool Buttons::get_button_event(button_event_t& button_event)
 {
     int count = queue_get_level(&btn_evt_queue);
     if (count) {
-        queue_remove_blocking(&btn_evt_queue, button_event);
+        queue_remove_blocking(&btn_evt_queue, &button_event);
         return true;
     } 
     return false;
 }
 
-void Buttons::clear_history(button_history_t *history, bool flag)
+void Buttons::clear_history(button_history_t& history, bool flag)
 {
-    if (flag) {
-        *history = ~0LL;
-    } else {
-        *history = 0LL;
-    }
+    history = flag ? ~0LL : 0LL;
 }
 
-bool Buttons::get_pos_history(button_history_t *history, int i)
+bool Buttons::get_pos_history(button_history_t& history, int i)
 {
     uint64_t mask = 1LL << i;
-    return (((uint64_t) *history) & mask) != 0LL;
+    return (static_cast<uint64_t>(history) & mask) != 0LL;
 }
 
-void Buttons::unshift_history(button_history_t* history, bool sts)
+void Buttons::unshift_history(button_history_t& history, bool sts)
 {
-    *history = (*history << 1) | ((uint64_t) sts);
+    history = (history << 1) | static_cast<uint64_t>(sts);
 }
 
-uint8_t Buttons::get_recent_stay_pushed_counts(button_history_t* history)
+uint8_t Buttons::get_recent_stay_pushed_counts(button_history_t& history)
 {
     // shortcut for very usual history case
-    if (*history == 0) {
-        return (uint8_t) 0;
+    if (history == 0) {
+        return static_cast<uint8_t>(0);
     }
-    return trailing_zeros64(~((uint64_t) *history));
+    return trailing_zeros64(~static_cast<uint64_t>(history));
 }
 
-uint8_t Buttons::get_recent_stay_released_counts(button_history_t* history)
+uint8_t Buttons::get_recent_stay_released_counts(button_history_t& history)
 {
-    return trailing_zeros64((uint64_t) *history);
+    return trailing_zeros64(static_cast<uint64_t>(history));
 }
 
-uint8_t Buttons::count_rising_edge(button_history_t* history, bool single)
+uint8_t Buttons::count_rising_edge_core(uint64_t u64, bool single)
 {
-    uint64_t u64 = (uint64_t) *history;
     const uint64_t even_mask = 0x5555555555555555LL;
     const uint64_t odd_mask  = 0xaaaaaaaaaaaaaaaaLL;
     // check rising at even column
@@ -181,4 +192,14 @@ uint8_t Buttons::count_rising_edge(button_history_t* history, bool single)
     }
     // now '1' indicates where rising edge is
     return ones_count64(u64);
+}
+
+uint8_t Buttons::count_rising_edge(button_history_t& history, bool single)
+{
+    return count_rising_edge_core(static_cast<uint64_t>(history), single);
+}
+
+uint8_t Buttons::count_falling_edge(button_history_t& history, bool single)
+{
+    return count_rising_edge_core(~static_cast<uint64_t>(history), single);
 }

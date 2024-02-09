@@ -14,7 +14,9 @@ typedef enum _button_event_type_t {
     EVT_SINGLE,
     EVT_MULTI,
     EVT_LONG,
-    EVT_LONG_LONG
+    EVT_LONG_LONG,
+    EVT_ON,
+    EVT_OFF
 } button_event_type_t;
 
 typedef struct _button_event_t {
@@ -25,6 +27,7 @@ typedef struct _button_event_t {
 } button_event_t;
 
 typedef struct _button_config_t {
+    bool    is_button;             // Set true if it's a button or set false if it's a switch
     bool    active_high;           // Set false if button is connected between GND and pin with pull-up
     bool    multi_clicks;          // Detect multiple clicks if true, detect single click if false
     uint8_t filter_size;           // Filter size to process raw status
@@ -50,6 +53,7 @@ class Buttons {
     public:
     static constexpr int EVENT_QUEUE_LENGTH = 1;
     static constexpr button_config_t DEFAULT_BUTTON_SINGLE_CONFIG = {
+        true,   // is_button
         false,  // active_high
         false,  // multi_clicks
         1,      // filter_size
@@ -60,6 +64,7 @@ class Buttons {
         0       // long_long_detect_cnt
     };
     static constexpr button_config_t DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG = {
+        true,   // is_button
         false,  // active_high
         false,  // multi_clicks
         1,      // filter_size
@@ -70,6 +75,7 @@ class Buttons {
         0       // long_long_detect_cnt
     };
     static constexpr button_config_t DEFAULT_BUTTON_MULTI_CONFIG = {
+        true,   // is_button
         false,  // active_high
         true,   // multi_clicks
         1,      // filter_size
@@ -79,11 +85,22 @@ class Buttons {
         15,     // long_detect_cnt
         39      // long_long_detect_cnt
     };
+    static constexpr button_config_t DEFAULT_SWITCH_CONFIG = {
+        false,  // is_button
+        false,  // active_high
+        false,  // multi_clicks
+        1,      // filter_size
+        0,      // act_finish_cnt
+        0,      // repeat_detect_cnt
+        0,      // repeat_skip
+        0,      // long_detect_cnt
+        0       // long_long_detect_cnt
+    };
 
     Buttons(button_t* buttons, int size, uint8_t scan_skip = 0);
     virtual ~Buttons() {};
     void scan_periodic();
-    bool get_button_event(button_event_t* button_event);
+    bool get_button_event(button_event_t& button_event);
 
     private:
     button_t* _buttons;
@@ -92,10 +109,12 @@ class Buttons {
     uint32_t _scan_count;
     queue_t btn_evt_queue;
 
-    void clear_history(button_history_t *history, bool flag);
-    bool get_pos_history(button_history_t *history, int i);
-    void unshift_history(button_history_t* history, bool sts);
-    uint8_t get_recent_stay_pushed_counts(button_history_t* history);
-    uint8_t get_recent_stay_released_counts(button_history_t* history);
-    uint8_t count_rising_edge(button_history_t* history, bool single);
+    void clear_history(button_history_t& history, bool flag);
+    bool get_pos_history(button_history_t& history, int i);
+    void unshift_history(button_history_t& history, bool sts);
+    uint8_t get_recent_stay_pushed_counts(button_history_t& history);
+    uint8_t get_recent_stay_released_counts(button_history_t& history);
+    uint8_t count_rising_edge_core(uint64_t u64, bool single);
+    uint8_t count_rising_edge(button_history_t& history, bool single);
+    uint8_t count_falling_edge(button_history_t& history, bool single);
 };
