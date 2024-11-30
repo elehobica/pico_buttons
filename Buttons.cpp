@@ -6,6 +6,8 @@
 
 #include "Buttons.h"
 
+uint32_t button_t::max_id = 0;
+
 inline uint8_t trailing_zeros64(uint64_t u64)
 {
     return static_cast<uint8_t>(__builtin_ctzll(u64));
@@ -117,6 +119,7 @@ void Buttons::scan_periodic()
         }
         if (event_type != EVT_NONE && queue_get_level(&btn_evt_queue) < EVENT_QUEUE_LENGTH) {
             button_event_t button_event = {
+                button->id,   // button_id
                 button->name, // button_name
                 event_type,   // event_type
                 count_rise,   // click_count

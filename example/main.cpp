@@ -27,14 +27,24 @@ static constexpr uint PIN_RESET_BUTTON  = 27;
 static repeating_timer_t timer;
 static constexpr int INTERVAL_BUTTONS_CHECK_MS = 50;
 
+typedef enum _button_id_t {
+    ID_UP_BUTTON = 0,
+    ID_DOWN_BUTTON,
+    ID_LEFT_BUTTON,
+    ID_RIGHT_BUTTON,
+    ID_CENTER_BUTTON,
+    ID_SET_BUTTON,
+    ID_RESET_BUTTON
+} button_id_t;
+
 static button_t btns_5way_tactile_plus2[] = {
-    {"up",     PIN_UP_BUTTON,     &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
-    {"down",   PIN_DOWN_BUTTON,   &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
-    {"left",   PIN_LEFT_BUTTON,   &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
-    {"right",  PIN_RIGHT_BUTTON,  &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
-    {"center", PIN_CENTER_BUTTON, &Buttons::DEFAULT_BUTTON_MULTI_CONFIG},
-    {"set",    PIN_SET_BUTTON,    &Buttons::DEFAULT_BUTTON_SINGLE_CONFIG},
-    {"reset",  PIN_RESET_BUTTON,  &Buttons::DEFAULT_SWITCH_CONFIG}
+    {ID_UP_BUTTON,     "up",     PIN_UP_BUTTON,     &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
+    {ID_DOWN_BUTTON,   "down",   PIN_DOWN_BUTTON,   &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
+    {ID_LEFT_BUTTON,   "left",   PIN_LEFT_BUTTON,   &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
+    {ID_RIGHT_BUTTON,  "right",  PIN_RIGHT_BUTTON,  &Buttons::DEFAULT_BUTTON_SINGLE_REPEAT_CONFIG},
+    {ID_CENTER_BUTTON, "center", PIN_CENTER_BUTTON, &Buttons::DEFAULT_BUTTON_MULTI_CONFIG},
+    {ID_SET_BUTTON,    "set",    PIN_SET_BUTTON,    &Buttons::DEFAULT_BUTTON_SINGLE_CONFIG},
+    {ID_RESET_BUTTON,  "reset",  PIN_RESET_BUTTON,  &Buttons::DEFAULT_SWITCH_CONFIG}
 };
 
 Buttons* buttons = nullptr;
@@ -89,28 +99,28 @@ int main()
             switch (event.type) {
             case EVT_SINGLE:
                 if (event.repeat_count > 0) {
-                    printf("%s: 1 (Repeated %d)\r\n", event.button_name, event.repeat_count);
+                    printf("%s(%d): 1 (Repeated %d)\r\n", event.button_name, event.button_id, event.repeat_count);
                 } else {
-                    printf("%s: 1\r\n", event.button_name);
+                    printf("%s(%d): 1\r\n", event.button_name, event.button_id);
                 }
                 break;
             case EVT_MULTI:
-                printf("%s: %d\r\n", event.button_name, event.click_count);
+                printf("%s(%d): %d\r\n", event.button_name, event.button_id, event.click_count);
                 if (strncmp(event.button_name, "center", 6) == 0 && event.click_count == 3) {
                     printf("time %dus (scan: %d)\r\n", t, scan_cnt);
                 }
                 break;
             case EVT_LONG:
-                printf("%s: Long\r\n", event.button_name);
+                printf("%s(%d): Long\r\n", event.button_name, event.button_id);
                 break;
             case EVT_LONG_LONG:
-                printf("%s: LongLong\r\n", event.button_name);
+                printf("%s(%d): LongLong\r\n", event.button_name, event.button_id);
                 break;
             case EVT_ON:
-                printf("%s: switch on\r\n", event.button_name);
+                printf("%s(%d): switch on\r\n", event.button_name, event.button_id);
                 break;
             case EVT_OFF:
-                printf("%s: switch off\r\n", event.button_name);
+                printf("%s(%d): switch off\r\n", event.button_name, event.button_id);
                 break;
             default:
                 break;

@@ -20,6 +20,7 @@ typedef enum _button_event_type_t {
 } button_event_type_t;
 
 typedef struct _button_event_t {
+    uint32_t            button_id;
     const char*         button_name;
     button_event_type_t type;
     uint8_t             click_count;
@@ -41,12 +42,18 @@ typedef struct _button_config_t {
 typedef uint64_t button_history_t;
 
 typedef struct _button_t {
+    const uint32_t id;
     const char* name;
     const uint pin;
     const button_config_t* config;
     button_history_t history;
     button_history_t filtered;
     uint8_t rpt_cnt;
+    static uint32_t max_id;
+    static void reg_id(uint32_t id) { if (id >= max_id) max_id = id + 1; }
+    static uint32_t gen_id() { return max_id++; }
+    _button_t(const uint32_t id_, const char* name_, const uint pin_, const button_config_t* config_) : id(id_), name(name_), pin(pin_), config(config_) { reg_id(id); }
+    _button_t(const char* name_, const uint pin_, const button_config_t* config_) : id(gen_id()), name(name_), pin(pin_), config(config_) {}
 } button_t;
 
 class Buttons {
