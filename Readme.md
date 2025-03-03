@@ -1,6 +1,6 @@
-# Raspberry Pi Pico Buttons
+# Buttons handling library for Raspberry Pi Pico / Pico 2
 ## Overview
-This project is a library for handling multiple buttons on Raspberry Pi Pico
+This project is a library for handling multiple buttons on Raspberry Pi Pico / Pico 2
 
 This project features to detect:
 * Single Push event
@@ -16,20 +16,21 @@ This project features to detect:
 
 ## Supported Board and Device
 * Raspberry Pi Pico
+* Raspberry Pi Pico 2
 
 ## How to build
 * See ["Getting started with Raspberry Pi Pico"](https://datasheets.raspberrypi.org/pico/getting-started-with-pico.pdf)
 * Put "pico-sdk", "pico-examples" and "pico-extras" on the same level with this project folder.
 * Set environmental variables for PICO_SDK_PATH, PICO_EXTRAS_PATH and PICO_EXAMPLES_PATH
-* Confirmed with Pico SDK 2.0.0
+* Confirmed with Pico SDK 2.1.1
 ```
-> git clone -b 2.0.0 https://github.com/raspberrypi/pico-sdk.git
+> git clone -b 2.1.1 https://github.com/raspberrypi/pico-sdk.git
 > cd pico-sdk
 > git submodule update -i
 > cd ..
-> git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-examples.git
+> git clone -b sdk-2.1.1 https://github.com/raspberrypi/pico-examples.git
 >
-> git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-extras.git
+> git clone -b sdk-2.1.1 https://github.com/raspberrypi/pico-extras.git
 >
 > git clone -b main https://github.com/elehobica/pico_buttons.git
 ```
@@ -40,17 +41,19 @@ This project features to detect:
 ```
 > cd pico_buttons\example
 > mkdir build && cd build
-> cmake -G "NMake Makefiles" ..
+> cmake -G "NMake Makefiles" ..  ; (for Raspberry Pi Pico 1 series)
+> cmake -G "NMake Makefiles" -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2 ..  ; (for Raspberry Pi Pico 2)
 > nmake
 ```
-* Put "pico_buttons_example.uf2" on RPI-RP2 drive
+* Put "*.uf2" on RPI-RP2 or RP2350 drive
 ### Linux
-* Build is confirmed with [pico-sdk-dev-docker:sdk-2.0.0-1.0.0]( https://hub.docker.com/r/elehobica/pico-sdk-dev-docker)
+* Build is confirmed with [pico-sdk-dev-docker:sdk-2.1.1-1.0.0]( https://hub.docker.com/r/elehobica/pico-sdk-dev-docker)
 * Confirmed with cmake-3.22.1 and arm-none-eabi-gcc (15:10.3-2021.07-4) 10.3.1
 ```
 $ cd pico_buttons/example
 $ mkdir build && cd build
-$ cmake ..
+$ cmake ..  # (for Raspberry Pi Pico 1 series)
+$ cmake -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2 ..  # (for Raspberry Pi Pico 2)
 $ make -j4
 ```
-* Download "pico_buttons_example.uf2" on RPI-RP2 drive
+* Download "*.uf2" on RPI-RP2 or RP2350 drive
