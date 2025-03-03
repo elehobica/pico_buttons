@@ -5,10 +5,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [v1.0.2] - 2025-03-03
 ### Added
 * Add button id on button_t
 ### Changed
-* Support pico-sdk 2.0.0 (previously 1.5.1)
+* Support pico-sdk 2.0.0
 
-## [1.0.0] - 2023-08-15
+## [v1.0.1] - 2024-02-09
+### Added
+* Support DEFAULT_SWITCH_CONFIG
+### Changed
+* Support pico-sdk 1.5.1
+
+## [v1.0.0] - 2023-08-15
 * Initial release
