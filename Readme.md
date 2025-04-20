@@ -1,4 +1,7 @@
 # Buttons handling library for Raspberry Pi Pico / Pico 2
+
+[![Build](https://github.com/elehobica/pico_buttons/actions/workflows/build-binaries.yml/badge.svg)](https://github.com/elehobica/pico_buttons/actions/workflows/build-binaries.yml)
+
 ## Overview
 This project is a library for handling multiple buttons on Raspberry Pi Pico / Pico 2
 
